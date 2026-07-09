@@ -2,7 +2,6 @@ import React, { useState, useRef, useEffect } from 'react';
 import './App.css';
 
 function App() {
-  const [showPattern, setShowPattern] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -25,61 +24,7 @@ function App() {
     };
   }, [previewUrl]);
 
-  // Handle ESC key for modal
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && showPattern) {
-        setShowPattern(false);
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [showPattern]);
 
-  const generateAndDownloadPattern = () => {
-    const canvas = document.createElement('canvas');
-    canvas.width = 1920;
-    canvas.height = 1080;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    // Draw 4 quadrants
-    ctx.fillStyle = '#FF0000';
-    ctx.fillRect(0, 0, 960, 540);
-    ctx.fillStyle = '#00FF00';
-    ctx.fillRect(960, 0, 960, 540);
-    ctx.fillStyle = '#0000FF';
-    ctx.fillRect(0, 540, 960, 540);
-    ctx.fillStyle = '#FFFFFF';
-    ctx.fillRect(960, 540, 960, 540);
-
-    // Draw markers (simplified logic)
-    ctx.fillStyle = '#FFFFFF';
-    const drawMarker = (x: number, y: number) => {
-      ctx.fillRect(x, y, 60, 60);
-      ctx.fillStyle = '#000000';
-      ctx.fillRect(x + 10, y + 10, 40, 40);
-      ctx.fillStyle = '#FFFFFF';
-    };
-    
-    drawMarker(30, 30);
-    drawMarker(1830, 30);
-    drawMarker(30, 990);
-    drawMarker(1830, 990);
-
-    canvas.toBlob((blob) => {
-      if (blob) {
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'RGBW_Reference_Pattern.png';
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-      }
-    }, 'image/png');
-  };
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -396,20 +341,6 @@ ${Array.from({ length: 17 * 17 * 17 }).map((_, i) => {
         )}
       </section>
 
-      {/* Full screen modal */}
-      {showPattern && (
-        <div className="modal-overlay" onClick={() => setShowPattern(false)}>
-          <button className="modal-close" onClick={() => setShowPattern(false)}>&times;</button>
-          <div className="full-pattern" onClick={(e) => e.stopPropagation()}>
-            <div className="r"></div><div className="g"></div>
-            <div className="b"></div><div className="w"></div>
-            <div className="corner-marker marker-tl"></div>
-            <div className="corner-marker marker-tr"></div>
-            <div className="corner-marker marker-bl"></div>
-            <div className="corner-marker marker-br"></div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
