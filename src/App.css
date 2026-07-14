@@ -312,6 +312,12 @@
   color: #e0e0e0;
 }
 
+.status-message.success {
+  background-color: rgba(74, 222, 128, 0.1);
+  border-left: 3px solid #4ade80;
+  color: #e0e0e0;
+}
+
 .modal-overlay {
   position: fixed;
   top: 0;
@@ -352,6 +358,187 @@
 .full-pattern .g { background-color: #00ff00; }
 .full-pattern .b { background-color: #0000ff; }
 .full-pattern .w { background-color: #ffffff; }
+
+/* Simulator Control Bar */
+.simulator-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background-color: rgba(30, 30, 30, 0.8);
+  border: 1px solid #333;
+  padding: 10px 16px;
+  border-radius: 8px;
+  margin-bottom: 24px;
+  backdrop-filter: blur(10px);
+  flex-wrap: wrap;
+}
+
+.simulator-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #aaa;
+}
+
+.simulator-btn {
+  background-color: #222;
+  border: 1px solid #444;
+  color: #ccc;
+  padding: 6px 12px;
+  font-size: 0.8rem;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.simulator-btn:hover {
+  background-color: #333;
+  color: #fff;
+  border-color: #555;
+}
+
+.simulator-btn.active {
+  background-color: rgba(56, 128, 255, 0.2);
+  border-color: #3880ff;
+  color: #3880ff;
+  font-weight: 500;
+}
+
+/* Device Connection Status */
+.device-status-card {
+  margin-bottom: 24px;
+}
+
+.status-alert {
+  display: flex;
+  gap: 16px;
+  padding: 16px;
+  border-radius: 6px;
+  align-items: flex-start;
+  transition: all 0.3s ease;
+}
+
+.status-alert-icon {
+  font-size: 1.5rem;
+  line-height: 1;
+}
+
+.status-alert-content {
+  flex: 1;
+}
+
+.status-alert-title {
+  font-weight: 600;
+  font-size: 1rem;
+  margin-bottom: 4px;
+}
+
+.status-alert-desc {
+  font-size: 0.88rem;
+  color: #ccc;
+  line-height: 1.5;
+}
+
+.status-alert-desc code {
+  background-color: rgba(0, 0, 0, 0.3);
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-family: monospace;
+  font-size: 0.85rem;
+}
+
+/* Alert States */
+.status-alert.warning {
+  background-color: rgba(234, 179, 8, 0.1);
+  border-left: 4px solid #eab308;
+  color: #fef08a;
+}
+.status-alert.warning .status-alert-desc {
+  color: #fef08a;
+  opacity: 0.9;
+}
+
+.status-alert.error {
+  background-color: rgba(239, 68, 68, 0.1);
+  border-left: 4px solid #ef4444;
+  color: #fecaca;
+}
+.status-alert.error .status-alert-desc {
+  color: #fecaca;
+  opacity: 0.9;
+}
+
+.status-alert.success-connection {
+  background-color: rgba(74, 222, 128, 0.1);
+  border-left: 4px solid #4ade80;
+  color: #bbf7d0;
+}
+.status-alert.success-connection .status-alert-desc {
+  color: #bbf7d0;
+  opacity: 0.9;
+}
+
+/* Steps Wrapper and Lock Overlay */
+.steps-wrapper {
+  position: relative;
+}
+
+.steps-container {
+  transition: all 0.4s ease;
+}
+
+.steps-container.blur-content {
+  filter: blur(5px);
+  pointer-events: none;
+  opacity: 0.3;
+}
+
+.steps-lock-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(18, 18, 18, 0.3);
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  backdrop-filter: blur(1px);
+}
+
+.lock-content {
+  background-color: rgba(30, 30, 30, 0.95);
+  border: 1px solid #444;
+  border-radius: 8px;
+  padding: 32px 24px;
+  text-align: center;
+  max-width: 320px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+  display: flex;
+  flex-direction: center;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.lock-content svg {
+  color: #eab308;
+  margin-bottom: 8px;
+}
+
+.lock-content h3 {
+  font-size: 1.15rem;
+  margin: 0;
+  color: #fff;
+}
+
+.lock-content p {
+  font-size: 0.9rem;
+  color: #aaa;
+  margin: 0;
+  line-height: 1.4;
+}
 
 @media (max-width: 768px) {
   .title {

@@ -1,32 +1,51 @@
-# React + TypeScript + Vite
+# SQD 电视色彩校准工具 (SQD TV Color Calibration Tool)
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+这是一个用于 SQD 电视画质校准的在线色彩校准辅助工具。通过扫码接入，用户可以上传拍摄到的电视测试图素材，并在线生成高精度的色彩校准文件（`.cube`格式），甚至直接一键导入应用到当前电视中。
 
-Currently, two official plugins are available:
+## 主要功能特点
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+1. **智能设备监测与校验**
+   * **扫码连接**：用户扫描电视上的二维码后访问本网页，URL 中会携带 `model` (设备机型) 和 `dnum` (设备号) 参数。
+   * **机型校验**：系统会自动提取并验证机型。只有匹配成功的 SQD 电视（机型名称中包含 `SQD`）才可以解锁后续的校准步骤；否则系统会将下方校准界面模糊并锁定，防止导入不兼容的参数。
+   * **扫码模拟器**：在页面顶部内置了调试工具，可一键切换“已匹配设备”、“未匹配设备”、“未连接设备”的状态，方便脱离电视环境单独进行测试与演示。
 
-## React Compiler
+2. **步骤一：获取并拍摄测试图**
+   * 指引用户在电视上进入色彩设置页面，长按右键开启“画质校准工具”。
+   * 获取并拍摄电视显示的标准 RGBW 测试图画面。
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+3. **步骤二：上传素材与色彩校准**
+   * 支持拖拽或点击上传图片/视频素材。
+   * 点击“校准”按钮，在前端模拟进行 3D LUT 白点校准计算，生成对应的色彩校正数据。
 
-## Expanding the Oxlint configuration
+4. **步骤三：下载与一键导入**
+   * **下载校准文件**：生成高精度 3D 17-size 的 `.cube` 格式色彩校准文件至本地。
+   * **一键导入当前设备**：在免去 ADB 等复杂操作的前提下，一键模拟将校正文件直接无线推送并应用到已识别匹配的当前 SQD 电视上。
 
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
+---
 
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+## 本地开发与部署
+
+### 1. 安装依赖
+```bash
+npm install
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+### 2. 本地开发服务器启动
+```bash
+npm run dev
+```
+启动后会输出本地地址，如 `http://localhost:5174/trilaser-color-correction-demo/`。
+
+> **提示**：若直接打开是“未发现已连接设备”的锁定状态，请使用顶部的 **扫码模拟器** 按钮进行模拟匹配。
+
+### 3. 项目打包构建
+```bash
+npm run build
+```
+打包后生成静态文件在 `dist` 目录中。
+
+### 4. 部署至 GitHub Pages
+项目已配置 GitHub Pages 部署脚本：
+```bash
+npm run deploy
+```

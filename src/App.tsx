@@ -7,11 +7,18 @@ function App() {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isGenerated, setIsGenerated] = useState(false);
-  
-  const [adbStatus, setAdbStatus] = useState<'disconnected' | 'scanning' | 'found' | 'connected'>('disconnected');
-  const [adbDevice, setAdbDevice] = useState('');
-  const [adbIp, setAdbIp] = useState('');
-  const [actionStatus, setActionStatus] = useState('');
+  const [importStatus, setImportStatus] = useState<'idle' | 'importing' | 'success'>('idle');
+
+  // Get initial query parameters
+  const getUrlParams = () => {
+    const params = new URLSearchParams(window.location.search);
+    return {
+      model: params.get('model') || '',
+      dnum: params.get('dnum') || '',
+    };
+  };
+
+  const [deviceInfo, setDeviceInfo] = useState(getUrlParams());
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -69,10 +76,29 @@ function App() {
     setUploadProgress(0);
     setIsGenerating(false);
     setIsGenerated(false);
+    setImportStatus('idle');
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
   };
+
+  const handleImport = () => {
+    setImportStatus('importing');
+    setTimeout(() => {
+      setImportStatus('success');
+    }, 1500);
+  };
+
+  const simulateScan = (model: string, dnum: string) => {
+    const newUrl = `${window.location.pathname}${model ? `?model=${model}&dnum=${dnum}` : ''}`;
+    window.history.pushState({}, '', newUrl);
+    setDeviceInfo({ model, dnum });
+    handleReset();
+  };
+
+  const isDeviceConnected = deviceInfo.model !== '' && deviceInfo.dnum !== '';
+  const isDeviceMatched = isDeviceConnected && deviceInfo.model.toUpperCase().includes('SQD');
+  const isUnlocked = isDeviceMatched;
 
   const downloadLUT = () => {
     const lutContent = `TITLE "SQD电视 Correction LUT"
@@ -106,43 +132,6 @@ ${Array.from({ length: 17 * 17 * 17 }).map((_, i) => {
     URL.revokeObjectURL(url);
   };
 
-  const refreshAdb = () => {
-    setAdbStatus('scanning');
-    setAdbDevice('');
-    setActionStatus('');
-    setTimeout(() => {
-      setAdbStatus('found');
-      setAdbDevice('SQD电视 - 192.168.1.88');
-    }, 1000);
-  };
-
-  const connectAdb = () => {
-    if (adbIp || adbDevice) {
-      setAdbStatus('connected');
-      setActionStatus('');
-    }
-  };
-
-  const disconnectAdb = () => {
-    setAdbStatus('disconnected');
-    setAdbDevice('');
-    setAdbIp('');
-    setActionStatus('');
-  };
-
-  const pushLut = () => {
-    setActionStatus('正在将 .cube 转换为 .bin...');
-    setTimeout(() => {
-      setActionStatus('正在推送校准到设备...');
-      setTimeout(() => {
-        setActionStatus('校准应用成功。');
-      }, 1000);
-    }, 1000);
-  };
-
-  const bypassLut = () => {
-    setActionStatus('校准已旁路，恢复原始颜色管线。');
-  };
 
   const formatBytes = (bytes: number) => {
     if (bytes === 0) return '0 B';
@@ -159,6 +148,65 @@ ${Array.from({ length: 17 * 17 * 17 }).map((_, i) => {
         <p className="subtitle">生成用于 SQD电视 色彩校准的校准文件。</p>
       </header>
 
+      {/* Simulator Control Bar */}
+      <div className="simulator-bar">
+        <span className="simulator-label">📱 扫码模拟器:</span>
+        <button 
+          className={`simulator-btn ${deviceInfo.model === 'SQD-TV-85' ? 'active' : ''}`}
+          onClick={() => simulateScan('SQD-TV-85', 'D1002394')}
+        >
+          扫码接入匹配机型 (SQD-TV-85)
+        </button>
+        <button 
+          className={`simulator-btn ${deviceInfo.model === 'Xiaomi-TV-65' ? 'active' : ''}`}
+          onClick={() => simulateScan('Xiaomi-TV-65', 'D99988877')}
+        >
+          扫码接入不匹配机型 (Xiaomi-TV-65)
+        </button>
+        <button 
+          className={`simulator-btn ${!deviceInfo.model ? 'active' : ''}`}
+          onClick={() => simulateScan('', '')}
+        >
+          断开连接 (直接访问)
+        </button>
+      </div>
+
+      {/* Device Connection Status Card */}
+      <section className="card device-status-card">
+        <h2 className="card-title">设备连接状态</h2>
+        {!isDeviceConnected ? (
+          <div className="status-alert warning">
+            <div className="status-alert-icon">⚠️</div>
+            <div className="status-alert-content">
+              <div className="status-alert-title">未发现已连接设备</div>
+              <div className="status-alert-desc">
+                本工具需要连接电视设备。请使用手机扫描电视端“画质校准工具”中的二维码访问此页面。
+              </div>
+            </div>
+          </div>
+        ) : !isDeviceMatched ? (
+          <div className="status-alert error">
+            <div className="status-alert-icon">❌</div>
+            <div className="status-alert-content">
+              <div className="status-alert-title">设备机型不匹配</div>
+              <div className="status-alert-desc">
+                已识别到设备 <strong>{deviceInfo.model}</strong>，但该机型不匹配本校准算法。请使用兼容的 SQD 系列电视进行校准。
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="status-alert success-connection">
+            <div className="status-alert-icon">✓</div>
+            <div className="status-alert-content">
+              <div className="status-alert-title">设备已连接且匹配成功</div>
+              <div className="status-alert-desc">
+                已成功连接至：<strong>SQD 电视 ({deviceInfo.model})</strong>
+              </div>
+            </div>
+          </div>
+        )}
+      </section>
+
       {/* Module 1 */}
       <section className="card">
         <h2 className="card-title">什么是 SQD电视色彩校准？</h2>
@@ -168,7 +216,7 @@ ${Array.from({ length: 17 * 17 * 17 }).map((_, i) => {
         <p className="card-text" style={{ marginBottom: '8px' }}>该过程包括：</p>
         <ol className="process-list">
           <li>用相机拍摄标准 RGBW 色卡</li>
-          <li>上传捕获的图像或视频以生成校准数据</li>
+          <li>上传捕获的图像或视频以生成校准 data</li>
           <li>将校准应用于您的 SQD电视</li>
         </ol>
 
@@ -209,138 +257,96 @@ ${Array.from({ length: 17 * 17 * 17 }).map((_, i) => {
         </div>
       </section>
 
-      {/* Module 2 */}
-      <section className="card">
-        <h2 className="card-title">步骤一：获取并拍摄测试图</h2>
-        <div className="card-text">
-          <ol className="process-list" style={{ marginBottom: 0 }}>
-            <li>进入电视 <strong>设置 - 图像设置 - 色彩 - 色彩风格</strong>，长按遥控器“右键” 4 秒，开启画质校准工具。</li>
-            <li>点击 <strong>拍照校准</strong>，然后选择 <strong>专业校准图</strong>。</li>
-            <li>使用拍摄设备拍摄电视画面上的测试图，准备在下一步上传。</li>
-          </ol>
-        </div>
-      </section>
+      {/* Steps Wrapper to apply lock mechanism */}
+      <div className="steps-wrapper">
+        <div className={`steps-container ${!isUnlocked ? 'blur-content' : ''}`}>
+          {/* Module 2 */}
+          <section className="card">
+            <h2 className="card-title">步骤一：获取并拍摄测试图</h2>
+            <div className="card-text">
+              <ol className="process-list" style={{ marginBottom: 0 }}>
+                <li>进入电视 <strong>设置 - 图像设置 - 色彩 - 色彩风格</strong>，长按遥控器“右键” 4 秒，开启画质校准工具。</li>
+                <li>点击 <strong>拍照校准</strong>，然后选择 <strong>专业校准图</strong>。</li>
+                <li>使用拍摄设备拍摄电视画面上的测试图，准备在下一步上传。</li>
+              </ol>
+            </div>
+          </section>
 
-      {/* Module 3 */}
-      <section className="card">
-        <h2 className="card-title">步骤二：上传您的视频素材</h2>
-        
-        <div className="upload-area" onClick={triggerFileInput}>
-          {uploadProgress > 0 && <div className="upload-progress-bar" style={{ width: `${uploadProgress}%` }}></div>}
-          <div style={{ position: 'relative', zIndex: 1 }}>
-            <div className="upload-text">上传图片/视频</div>
-            <div className="upload-subtext">
-              {uploadedFile ? `${uploadedFile.name} (${formatBytes(uploadedFile.size)})` : '点击选择或拖放文件'}
+          {/* Module 3 */}
+          <section className="card">
+            <h2 className="card-title">步骤二：上传您的视频素材</h2>
+            
+            <div className="upload-area" onClick={triggerFileInput}>
+              {uploadProgress > 0 && <div className="upload-progress-bar" style={{ width: `${uploadProgress}%` }}></div>}
+              <div style={{ position: 'relative', zIndex: 1 }}>
+                <div className="upload-text">上传图片/视频</div>
+                <div className="upload-subtext">
+                  {uploadedFile ? `${uploadedFile.name} (${formatBytes(uploadedFile.size)})` : '点击选择或拖放文件'}
+                </div>
+              </div>
+              <input 
+                type="file" 
+                ref={fileInputRef} 
+                onChange={handleFileUpload} 
+                accept="image/*,video/*" 
+              />
+            </div>
+
+            {previewUrl && (
+              <div>
+                <img src={previewUrl} alt="Preview" className="upload-preview" />
+              </div>
+            )}
+            
+            {uploadProgress === 100 && (
+              <div className="button-group" style={{ marginTop: '20px', justifyContent: 'flex-end' }}>
+                <button className="btn btn-secondary" onClick={handleReset} disabled={isGenerating}>
+                  重置
+                </button>
+                <button className="btn" onClick={handleGenerate} disabled={isGenerating || isGenerated}>
+                  {isGenerating ? '校准中...' : isGenerated ? '已校准' : '校准'}
+                </button>
+              </div>
+            )}
+          </section>
+
+          {/* Module 4 & 5 */}
+          <section className="card">
+            <h2 className="card-title">步骤三：下载并导入校准文件</h2>
+            <div className="button-group">
+              <button className="btn" onClick={downloadLUT} disabled={!isGenerated || importStatus === 'importing'}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                下载校准文件
+              </button>
+              <button className="btn btn-secondary" onClick={handleImport} disabled={!isGenerated || importStatus === 'importing'}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+                {importStatus === 'importing' ? '正在导入...' : '一键导入当前设备'}
+              </button>
+            </div>
+
+            {importStatus === 'importing' && (
+              <div className="status-message">
+                正在上传并应用校准文件到当前设备...
+              </div>
+            )}
+            {importStatus === 'success' && (
+              <div className="status-message success">
+                ✓ 校准文件已成功应用到当前设备！
+              </div>
+            )}
+          </section>
+        </div>
+
+        {!isUnlocked && (
+          <div className="steps-lock-overlay">
+            <div className="lock-content">
+              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+              <h3>校准步骤已锁定</h3>
+              <p>请先在上方连接匹配的 SQD 电视设备以解锁校准步骤</p>
             </div>
           </div>
-          <input 
-            type="file" 
-            ref={fileInputRef} 
-            onChange={handleFileUpload} 
-            accept="image/*,video/*" 
-          />
-        </div>
-
-        {previewUrl && (
-          <div>
-            <img src={previewUrl} alt="Preview" className="upload-preview" />
-          </div>
         )}
-        
-        {uploadProgress === 100 && (
-          <div className="button-group" style={{ marginTop: '20px', justifyContent: 'flex-end' }}>
-            <button className="btn btn-secondary" onClick={handleReset} disabled={isGenerating}>
-              重置
-            </button>
-            <button className="btn" onClick={handleGenerate} disabled={isGenerating || isGenerated}>
-              {isGenerating ? '校准中...' : isGenerated ? '已校准' : '校准'}
-            </button>
-          </div>
-        )}
-      </section>
-
-      {/* Module 4 & 5 */}
-      <section className="card">
-        <h2 className="card-title">步骤三：下载校准文件</h2>
-        <div className="button-group" style={{ marginBottom: '30px' }}>
-          <button className="btn" onClick={downloadLUT} disabled={!isGenerated}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
-            下载校准文件
-          </button>
-        </div>
-
-        <div className="adb-status-bar">
-          <div className={`adb-status ${adbStatus === 'connected' ? 'connected' : ''}`}>
-            {adbStatus === 'disconnected' && 'ADB 未连接：未发现设备'}
-            {adbStatus === 'scanning' && '正在扫描设备...'}
-            {adbStatus === 'found' && 'ADB 已连接：发现 1 个设备'}
-            {adbStatus === 'connected' && `ADB 已连接：${adbDevice || adbIp || 'SQD电视'}`}
-          </div>
-          <button className="btn-text" onClick={refreshAdb}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
-            刷新
-          </button>
-        </div>
-
-        <div className="form-group">
-          <label className="form-label">ADB 设备</label>
-          <select 
-            className="form-control" 
-            value={adbDevice} 
-            onChange={(e) => setAdbDevice(e.target.value)}
-            disabled={adbStatus === 'disconnected' || adbStatus === 'scanning'}
-          >
-            {adbStatus === 'disconnected' && <option value="">未发现设备</option>}
-            {(adbStatus === 'found' || adbStatus === 'connected') && (
-              <>
-                <option value="">选择一个设备</option>
-                <option value="SQD电视 - 192.168.1.88">SQD电视 - 192.168.1.88</option>
-              </>
-            )}
-          </select>
-        </div>
-
-        <div className="form-row">
-          <div className="form-group">
-            <label className="form-label">ADB IP 地址</label>
-            <input 
-              type="text" 
-              className="form-control" 
-              value={adbIp}
-              onChange={(e) => setAdbIp(e.target.value)}
-              placeholder="例如：192.168.1.88" 
-            />
-          </div>
-          <div className="button-group">
-            <button className="btn" onClick={connectAdb} disabled={!adbIp && !adbDevice}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
-              连接
-            </button>
-            <button className="btn btn-secondary" onClick={disconnectAdb} disabled={adbStatus !== 'connected'}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-              断开连接
-            </button>
-          </div>
-        </div>
-
-        <div className="button-group">
-          <button className="btn" onClick={pushLut} disabled={adbStatus !== 'connected'}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
-            转换并推送校准
-          </button>
-          <button className="btn btn-secondary" onClick={bypassLut} disabled={adbStatus !== 'connected'}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line></svg>
-            旁路校准 (Bypass)
-          </button>
-        </div>
-
-        {actionStatus && (
-          <div className="status-message">
-            {actionStatus}
-          </div>
-        )}
-      </section>
-
+      </div>
     </div>
   );
 }
