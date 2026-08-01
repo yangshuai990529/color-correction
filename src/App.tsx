@@ -37,13 +37,13 @@ function App() {
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
-      setUploadedFile(file);
-      
-      if (file.type.startsWith('image/')) {
-        setPreviewUrl(URL.createObjectURL(file));
-      } else {
-        setPreviewUrl(null);
+      if (!file.type.startsWith('image/')) {
+        e.target.value = '';
+        return;
       }
+
+      setUploadedFile(file);
+      setPreviewUrl(URL.createObjectURL(file));
 
       // Simulate upload progress
       setUploadProgress(0);
@@ -148,7 +148,7 @@ function App() {
         <p className="card-text" style={{ marginBottom: '8px' }}>该过程包括：</p>
         <ol className="process-list">
           <li>用相机拍摄标准 RGBW 色卡</li>
-          <li>上传捕获的图像或视频以生成校准 data</li>
+          <li>上传拍摄的图片以生成校准 data</li>
           <li>将校准应用于您的 SQD电视</li>
         </ol>
 
@@ -197,21 +197,21 @@ function App() {
 
           {/* Module 3 */}
           <section className="card">
-            <h2 className="card-title">步骤二：上传您的视频素材</h2>
+            <h2 className="card-title">步骤二：上传您刚才拍摄的图片</h2>
             
             <div className="upload-area" onClick={triggerFileInput}>
               {uploadProgress > 0 && <div className="upload-progress-bar" style={{ width: `${uploadProgress}%` }}></div>}
               <div style={{ position: 'relative', zIndex: 1 }}>
-                <div className="upload-text">上传图片/视频</div>
+                <div className="upload-text">上传图片</div>
                 <div className="upload-subtext">
-                  {uploadedFile ? `${uploadedFile.name} (${formatBytes(uploadedFile.size)})` : '点击选择或拖放文件'}
+                  {uploadedFile ? `${uploadedFile.name} (${formatBytes(uploadedFile.size)})` : '点击选择图片（仅支持图片格式）'}
                 </div>
               </div>
               <input 
                 type="file" 
                 ref={fileInputRef} 
                 onChange={handleFileUpload} 
-                accept="image/*,video/*" 
+                accept="image/*"
               />
             </div>
 
@@ -235,22 +235,22 @@ function App() {
 
           {/* Module 4 & 5 */}
           <section className="card">
-            <h2 className="card-title">步骤三：导入校准文件</h2>
+            <h2 className="card-title">步骤三：推送校准文件</h2>
             <div className="button-group">
               <button className="btn btn-secondary" onClick={handleImport} disabled={!isGenerated || importStatus === 'importing'}>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
-                {importStatus === 'importing' ? '正在导入...' : '一键导入当前设备'}
+                {importStatus === 'importing' ? '正在推送...' : '一键推送到电视'}
               </button>
             </div>
 
             {importStatus === 'importing' && (
               <div className="status-message">
-                正在上传并应用校准文件到当前设备...
+                正在向电视推送校准文件...
               </div>
             )}
             {importStatus === 'success' && (
               <div className="status-message success">
-                ✓ 校准文件已成功应用到当前设备！
+                ✓ 校准文件已成功推送，请在电视一键拉取当前文件
               </div>
             )}
           </section>
