@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import './App.css';
+import rgbwCalibrationPattern from './assets/rgbw-calibration-pattern.png';
 
 function App() {
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -100,39 +101,6 @@ function App() {
   const isDeviceMatched = isDeviceConnected && deviceInfo.model.toUpperCase().includes('SQD');
   const isUnlocked = isDeviceMatched;
 
-  const downloadLUT = () => {
-    const lutContent = `TITLE "SQD电视 Correction LUT"
-LUT_3D_SIZE 17
-DOMAIN_MIN 0.0 0.0 0.0
-DOMAIN_MAX 1.0 1.0 1.0
-
-# Mock Data (Identity with slight correction)
-# R = r*0.98, G = g*1.02, B = b*1.00
-${Array.from({ length: 17 * 17 * 17 }).map((_, i) => {
-      const b = Math.floor(i / (17 * 17));
-      const g = Math.floor((i % (17 * 17)) / 17);
-      const r = i % 17;
-      
-      const rVal = Math.min(1.0, (r / 16.0) * 0.98).toFixed(6);
-      const gVal = Math.min(1.0, (g / 16.0) * 1.02).toFixed(6);
-      const bVal = Math.min(1.0, (b / 16.0) * 1.00).toFixed(6);
-      
-      return `${rVal} ${gVal} ${bVal}`;
-    }).join('\n')}
-`;
-    
-    const blob = new Blob([lutContent], { type: 'text/plain' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'SQD_Correction.cube';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  };
-
-
   const formatBytes = (bytes: number) => {
     if (bytes === 0) return '0 B';
     const k = 1024;
@@ -171,42 +139,6 @@ ${Array.from({ length: 17 * 17 * 17 }).map((_, i) => {
         </button>
       </div>
 
-      {/* Device Connection Status Card */}
-      <section className="card device-status-card">
-        <h2 className="card-title">设备连接状态</h2>
-        {!isDeviceConnected ? (
-          <div className="status-alert warning">
-            <div className="status-alert-icon">⚠️</div>
-            <div className="status-alert-content">
-              <div className="status-alert-title">未发现已连接设备</div>
-              <div className="status-alert-desc">
-                本工具需要连接电视设备。请使用手机扫描电视端“画质校准工具”中的二维码访问此页面。
-              </div>
-            </div>
-          </div>
-        ) : !isDeviceMatched ? (
-          <div className="status-alert error">
-            <div className="status-alert-icon">❌</div>
-            <div className="status-alert-content">
-              <div className="status-alert-title">设备机型不匹配</div>
-              <div className="status-alert-desc">
-                已识别到设备 <strong>{deviceInfo.model}</strong>，但该机型不匹配本校准算法。请使用兼容的 SQD 系列电视进行校准。
-              </div>
-            </div>
-          </div>
-        ) : (
-          <div className="status-alert success-connection">
-            <div className="status-alert-icon">✓</div>
-            <div className="status-alert-content">
-              <div className="status-alert-title">设备已连接且匹配成功</div>
-              <div className="status-alert-desc">
-                已成功连接至：<strong>SQD 电视 ({deviceInfo.model})</strong>
-              </div>
-            </div>
-          </div>
-        )}
-      </section>
-
       {/* Module 1 */}
       <section className="card">
         <h2 className="card-title">什么是 SQD电视色彩校准？</h2>
@@ -222,36 +154,27 @@ ${Array.from({ length: 17 * 17 * 17 }).map((_, i) => {
 
         <div className="illustrations">
           <div className="illustration-item">
-            <div className="rgbw-pattern">
-              <div className="r"></div><div className="g"></div>
-              <div className="b"></div><div className="w"></div>
-              <div className="corner-marker marker-tl"></div>
-              <div className="corner-marker marker-tr"></div>
-              <div className="corner-marker marker-bl"></div>
-              <div className="corner-marker marker-br"></div>
-            </div>
+            <img
+              className="calibration-pattern-image"
+              src={rgbwCalibrationPattern}
+              alt="标准 RGBW 测试图"
+            />
             <div className="illustration-caption">标准 RGBW 测试图</div>
           </div>
           <div className="illustration-item">
-            <div className="rgbw-pattern captured">
-              <div className="r"></div><div className="g"></div>
-              <div className="b"></div><div className="w"></div>
-              <div className="corner-marker marker-tl"></div>
-              <div className="corner-marker marker-tr"></div>
-              <div className="corner-marker marker-bl"></div>
-              <div className="corner-marker marker-br"></div>
-            </div>
+            <img
+              className="calibration-pattern-image"
+              src={rgbwCalibrationPattern}
+              alt="相机拍摄画面"
+            />
             <div className="illustration-caption">相机拍摄画面</div>
           </div>
           <div className="illustration-item">
-            <div className="rgbw-pattern corrected">
-              <div className="r"></div><div className="g"></div>
-              <div className="b"></div><div className="w"></div>
-              <div className="corner-marker marker-tl"></div>
-              <div className="corner-marker marker-tr"></div>
-              <div className="corner-marker marker-bl"></div>
-              <div className="corner-marker marker-br"></div>
-            </div>
+            <img
+              className="calibration-pattern-image"
+              src={rgbwCalibrationPattern}
+              alt="校准后画面"
+            />
             <div className="illustration-caption">校准后画面</div>
           </div>
         </div>
@@ -312,12 +235,8 @@ ${Array.from({ length: 17 * 17 * 17 }).map((_, i) => {
 
           {/* Module 4 & 5 */}
           <section className="card">
-            <h2 className="card-title">步骤三：下载并导入校准文件</h2>
+            <h2 className="card-title">步骤三：导入校准文件</h2>
             <div className="button-group">
-              <button className="btn" onClick={downloadLUT} disabled={!isGenerated || importStatus === 'importing'}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
-                下载校准文件
-              </button>
               <button className="btn btn-secondary" onClick={handleImport} disabled={!isGenerated || importStatus === 'importing'}>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
                 {importStatus === 'importing' ? '正在导入...' : '一键导入当前设备'}
